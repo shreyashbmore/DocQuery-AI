@@ -1,0 +1,8 @@
+# Same pipeline, hosted models. Usage: docquery ask "..." -c configs/api_openai.yaml
+index_dir: index/openai
+embedding:
+  provider: openai
+  model: text-embedding-3-small
+llm:
+  provider: openai
+  model: gpt-4o-mini

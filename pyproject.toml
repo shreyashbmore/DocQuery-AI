@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "docquery-ai"
+version = "0.1.0"
+description = "DocQuery AI: Intelligent Question Answering over Documents with hybrid retrieval and verifiable citations"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{ name = "Shreyash More" }]
+dependencies = [
+  "numpy>=1.24", "pyyaml>=6.0", "httpx>=0.25", "rank-bm25>=0.2.2",
+  "pymupdf>=1.23", "python-docx>=1.1", "beautifulsoup4>=4.12",
+]
+
+[project.optional-dependencies]
+local = ["sentence-transformers>=2.7"]
+qdrant = ["qdrant-client>=1.9"]
+app = ["fastapi>=0.110", "uvicorn[standard]>=0.29", "python-multipart>=0.0.9", "streamlit>=1.35"]
+dev = ["pytest>=8.0"]
+
+[project.scripts]
+docquery = "docquery.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["docquery*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

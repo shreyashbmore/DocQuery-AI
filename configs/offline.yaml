@@ -1,0 +1,14 @@
+# Zero-download smoke-test setup: no model downloads, no GPU, no API key.
+# Quality is far below the default config - use it only to check that everything runs.
+index_dir: index/offline
+embedding:
+  provider: hash
+reranker:
+  model: lexical
+gate:
+  min_rerank_score: 0.3
+support_check:
+  min_similarity: 0.3
+llm:
+  provider: extractive
+  model: none

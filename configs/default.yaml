@@ -1,0 +1,48 @@
+# DocQuery AI default configuration. Every experiment is a copy of this file
+# (or CLI overrides like  retrieval.mode=dense  chunking.strategy=semantic).
+index_dir: index/default
+
+chunking:
+  strategy: recursive      # fixed | recursive | semantic
+  chunk_size: 220          # words (~300 tokens)
+  overlap: 40              # words (fixed / recursive)
+  semantic_threshold: 0.25 # percentile of adjacent-sentence similarity used as a breakpoint
+
+embedding:
+  provider: sentence-transformers   # sentence-transformers | openai | hash (tests only)
+  model: BAAI/bge-small-en-v1.5
+  batch_size: 32
+
+store:
+  backend: memory          # memory | qdrant
+  qdrant_url: null         # null = embedded local mode inside index_dir; or http://localhost:6333
+
+retrieval:
+  mode: hybrid             # dense | bm25 | hybrid
+  candidates: 20           # per retriever before fusion
+  rrf_k: 60
+  top_k: 5                 # chunks passed to the LLM
+
+reranker:
+  enabled: true
+  model: BAAI/bge-reranker-base   # bge-reranker-v2-m3 for multilingual / best quality
+
+gate:
+  enabled: true
+  min_rerank_score: 0.15   # sigmoid(cross-encoder logit); used when reranker is on
+  min_dense_score: 0.45    # cosine; used when reranker is off
+
+llm:
+  provider: ollama         # ollama | openai | extractive (offline, no LLM)
+  model: llama3.1:8b
+  temperature: 0.1
+  max_tokens: 700
+  timeout: 120
+
+support_check:
+  enabled: true
+  min_similarity: 0.5      # sentence vs. cited chunk cosine below this is flagged
+
+chat:
+  rewrite_queries: true
+  max_history_turns: 4
