@@ -36,3 +36,25 @@ def test_chunk_sections_ids_and_pages():
     chunks = chunk_sections(secs, {"strategy": "recursive", "chunk_size": 50, "overlap": 5})
     assert chunks[0].chunk_id.startswith("d1-p3-c")
     assert all(c.page == 3 for c in chunks)
+
+
+def test_resolve_overlap_fraction_and_words():
+    from docquery.ingest.chunkers import resolve_overlap
+    assert resolve_overlap(0.2, 200) == 40
+    assert resolve_overlap(40, 200) == 40
+    assert resolve_overlap(0, 200) == 0
+
+
+def test_sentence_overlap_never_cuts_sentences():
+    from docquery.ingest.chunkers import overlap_tail
+    text = "First rule applies to all students. Exception: lab courses need 80 percent attendance."
+    tail = overlap_tail(text, 10, "sentence")
+    assert tail == "Exception: lab courses need 80 percent attendance."
+    assert overlap_tail(text, 10, "word").split()[0] == "rule" or len(overlap_tail(text, 10, "word").split()) == 10
+
+
+def test_sentence_overlap_chunks_start_on_sentence_boundary():
+    paras = "\n\n".join(f"Paragraph {i} sentence one is here. Paragraph {i} sentence two follows it." for i in range(30))
+    chunks = recursive_chunks(paras, size=40, overlap=12, overlap_mode="sentence")
+    assert len(chunks) > 3
+    assert all(c.split()[0] == "Paragraph" for c in chunks)

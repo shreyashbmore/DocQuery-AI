@@ -1,0 +1,5 @@
+config,chunking,overlap,overlap_mode,retrieval,dedup,llm,chunks,recall@1,recall@5,recall@10,mrr@10,ndcg@10,dup_rate@5,p50_ms,p95_ms,n
+recursive 40 sentence · dense · dedup on,recursive,40,sentence,dense,on,,2376,1.0,1.0,1.0,1.0,0.8952,0.0,9,229,2
+recursive 40 sentence · bm25 · dedup on,recursive,40,sentence,bm25,on,,2376,1.0,1.0,1.0,1.0,0.8858,0.0,4,191,2
+recursive 40 sentence · hybrid · dedup on,recursive,40,sentence,hybrid,on,,2376,0.5,1.0,1.0,0.6,0.7109,0.0,15,317,2
+recursive 40 sentence · hybrid+rerank · dedup on,recursive,40,sentence,hybrid+rerank,on,,2376,1.0,1.0,1.0,1.0,0.9533,0.0,436,944,2

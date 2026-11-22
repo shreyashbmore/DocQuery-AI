@@ -1,6 +1,7 @@
 """Retriever: dense, BM25 or hybrid (RRF), followed by optional cross-encoder re-ranking."""
 from __future__ import annotations
 
+from docquery.metrics import containment
 from docquery.retrieve.bm25 import BM25Index
 from docquery.retrieve.fusion import reciprocal_rank_fusion
 from docquery.schema import Chunk, Retrieved
@@ -44,4 +45,22 @@ class Retriever:
                 r.scores["rerank"] = s
                 r.score = s
             results.sort(key=lambda r: -r.score)
+
+        threshold = self.cfg.get("dedup_threshold")
+        if threshold:
+            results = self.deduplicate(results, float(threshold), top_k)
         return results[:top_k]
+
+    @staticmethod
+    def deduplicate(results: list[Retrieved], threshold: float, top_k: int) -> list[Retrieved]:
+        """Keep a result only if it is not mostly contained in a higher-ranked one.
+
+        Overlapping chunks often retrieve as near-identical pairs; without this they can fill the
+        top-k and push out other relevant passages."""
+        kept: list[Retrieved] = []
+        for r in results:
+            if all(containment(r.chunk.text, k.chunk.text) < threshold for k in kept):
+                kept.append(r)
+            if len(kept) == top_k:
+                break
+        return kept

@@ -1,0 +1,21 @@
+id,type,answerable,question,expected,retrieve_ms,dup_rate@5,recall@1,recall@5,recall@10,mrr@10,ndcg@10,total_ms,abstained,abstention_correct,token_f1,numeric_exact,citation_precision,unsupported_rate,answer
+q001,factual,True,What are the prime factors that must be present in any number constructed using only the prime factors of 14 and 3?,"The prime factors are 2, 7, and 3.",919.4660829380155,0.0,1.0,1.0,1.0,1.0,0.8315546295836225,7963.665999937803,False,1.0,0.48484848484848486,1.0,1.0,0.0,"The prime factors that must be present in any number constructed using only the prime factors of 14 and 3 are 2, 7, and 3 [1]."
+q002,numeric,True,What is the value of x in the equation 12(48 - x) = 20x?,18,445.81570802256465,0.0,1.0,1.0,1.0,1.0,1.0,9975.325499661267,False,1.0,0.02631578947368421,1.0,1.0,0.9090909090909091,"To find the value of \(x\) in the equation \(12(48 - x) = 20x\), we can follow these steps:
+
+\[12(48 - x) = 20x\]
+
+Distribute the 12 on the left side:
+
+\[576 - 12x = 20x\]
+
+Move all terms involving \(x\) to one side and constants to the other:
+
+\[576 = 32x\]
+
+Divide both sides by 32 to solve for \(x\):
+
+\[x = \frac{576}{32}\]
+
+\[x = 18\]
+
+Therefore, the value of \(x\) is 18. This answer is supported by citation [1]."

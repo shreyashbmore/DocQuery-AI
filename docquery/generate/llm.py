@@ -12,10 +12,15 @@ import re
 import httpx
 
 
+def strip_thinking(text: str) -> str:
+    """Reasoning models (e.g. Qwen3, DeepSeek-R1) may prefix answers with <think>...</think>."""
+    return re.sub(r"<think>.*?</think>", "", text or "", flags=re.S).strip()
+
+
 class LLM:
     name: str
 
-    def chat(self, messages: list[dict]) -> str:
+    def chat(self, messages: list[dict], json_mode: bool = False) -> str:
         raise NotImplementedError
 
 
@@ -26,12 +31,14 @@ class OllamaLLM(LLM):
         self.host = os.getenv("OLLAMA_HOST", "http://localhost:11434").rstrip("/")
         self.client = httpx.Client(timeout=timeout)
 
-    def chat(self, messages):
-        r = self.client.post(f"{self.host}/api/chat", json={
-            "model": self.model, "messages": messages, "stream": False,
-            "options": {"temperature": self.temperature, "num_predict": self.max_tokens}})
+    def chat(self, messages, json_mode=False):
+        body = {"model": self.model, "messages": messages, "stream": False,
+                "options": {"temperature": self.temperature, "num_predict": self.max_tokens}}
+        if json_mode:
+            body["format"] = "json"
+        r = self.client.post(f"{self.host}/api/chat", json=body)
         r.raise_for_status()
-        return r.json()["message"]["content"].strip()
+        return strip_thinking(r.json()["message"]["content"])
 
 
 class OpenAICompatibleLLM(LLM):
@@ -45,14 +52,16 @@ class OpenAICompatibleLLM(LLM):
         self.client = httpx.Client(headers={"Authorization": f"Bearer {key}"}, timeout=timeout)
         self.last_usage: dict = {}
 
-    def chat(self, messages):
-        r = self.client.post(f"{self.base}/chat/completions", json={
-            "model": self.model, "messages": messages,
-            "temperature": self.temperature, "max_tokens": self.max_tokens})
+    def chat(self, messages, json_mode=False):
+        body = {"model": self.model, "messages": messages,
+                "temperature": self.temperature, "max_tokens": self.max_tokens}
+        if json_mode:
+            body["response_format"] = {"type": "json_object"}
+        r = self.client.post(f"{self.base}/chat/completions", json=body)
         r.raise_for_status()
         data = r.json()
         self.last_usage = data.get("usage", {})
-        return data["choices"][0]["message"]["content"].strip()
+        return strip_thinking(data["choices"][0]["message"]["content"])
 
 
 class ExtractiveLLM(LLM):
@@ -60,7 +69,7 @@ class ExtractiveLLM(LLM):
 
     name = "extractive"
 
-    def chat(self, messages):
+    def chat(self, messages, json_mode=False):
         from docquery.ingest.chunkers import split_sentences
         from docquery.generate.prompts import NOT_FOUND
         from docquery.retrieve.bm25 import tokenize

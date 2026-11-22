@@ -1,0 +1,1 @@
+14:28:20 INFO    Run 2026-11-21_142820 started: python eval/run_experiments.py --docs data/docs --gold eval/gold_qa.jsonl --llm qwen2:7b --quick --max-gen-questions 10

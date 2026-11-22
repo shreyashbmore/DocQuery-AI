@@ -1,0 +1,9 @@
+config,chunking,overlap,overlap_mode,retrieval,dedup,llm,chunks,recall@1,recall@5,recall@10,mrr@10,ndcg@10,dup_rate@5,p50_ms,p95_ms,n
+recursive 0 word · hybrid+rerank · dedup off,recursive,0,word,hybrid+rerank,off,,2254,1.0,1.0,1.0,1.0,0.9158,0.0,431,570,2
+recursive 0 word · hybrid+rerank · dedup on,recursive,0,word,hybrid+rerank,on,,2254,1.0,1.0,1.0,1.0,0.9158,0.0,444,577,2
+recursive 0 sentence · hybrid+rerank · dedup off,recursive,0,sentence,hybrid+rerank,off,,2254,1.0,1.0,1.0,1.0,0.9158,0.0,430,564,2
+recursive 0 sentence · hybrid+rerank · dedup on,recursive,0,sentence,hybrid+rerank,on,,2254,1.0,1.0,1.0,1.0,0.9158,0.0,438,570,2
+recursive 0.2 word · hybrid+rerank · dedup off,recursive,0.2,word,hybrid+rerank,off,,2428,1.0,1.0,1.0,1.0,0.9609,0.2,432,611,2
+recursive 0.2 word · hybrid+rerank · dedup on,recursive,0.2,word,hybrid+rerank,on,,2428,1.0,1.0,1.0,1.0,0.9663,0.0,435,613,2
+recursive 0.2 sentence · hybrid+rerank · dedup off,recursive,0.2,sentence,hybrid+rerank,off,,2398,1.0,1.0,1.0,1.0,0.9609,0.1,430,585,2
+recursive 0.2 sentence · hybrid+rerank · dedup on,recursive,0.2,sentence,hybrid+rerank,on,,2398,1.0,1.0,1.0,1.0,0.9609,0.0,433,597,2

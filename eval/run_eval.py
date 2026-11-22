@@ -22,24 +22,31 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from docquery.cli import _load_env  # noqa: E402
 from docquery.config import load_config  # noqa: E402
-from docquery.metrics import (is_relevant, mrr_at_k, ndcg_at_k, numbers_match, percentile,  # noqa: E402
-                              recall_at_k, token_f1)
+from docquery.metrics import (duplicate_rate, is_relevant, mrr_at_k, ndcg_at_k, numbers_match,  # noqa: E402
+                              percentile, recall_at_k, token_f1)
 from docquery.pipeline import DocQuery  # noqa: E402
 
 
 def load_gold(path: str) -> list[dict]:
     with open(path) as f:
-        return [json.loads(line) for line in f if line.strip()]
+        items = [json.loads(line) for line in f if line.strip()]
+    items = [i for i in items if not i.get("rejected")]
+    unverified = sum(1 for i in items if i.get("verified") is False)
+    if unverified:
+        print(f"Warning: {unverified} gold items are not hand-verified yet (run eval/review_gold.py).")
+    return items
 
 
 def evaluate(dq: DocQuery, gold: list[dict], retrieval_only: bool = False) -> tuple[dict, list[dict]]:
     rows = []
     for item in gold:
         answerable = item.get("answerable", True)
-        row = {"id": item["id"], "type": item.get("type", ""), "answerable": answerable}
+        row = {"id": item["id"], "type": item.get("type", ""), "answerable": answerable,
+               "question": item["question"], "expected": item.get("answer", "")}
         t0 = time.perf_counter()
         retrieved = dq.retriever.retrieve(item["question"], top_k=10)
         row["retrieve_ms"] = (time.perf_counter() - t0) * 1000
+        row["dup_rate@5"] = duplicate_rate([r.chunk.text for r in retrieved[:5]])
         if answerable:
             flags = [is_relevant(r.chunk, item) for r in retrieved]
             row.update({"recall@1": recall_at_k(flags, 1), "recall@5": recall_at_k(flags, 5),
@@ -69,7 +76,7 @@ def summarise(rows: list[dict]) -> dict:
         vals = [r[key] for r in rows if key in r]
         return round(stats.mean(vals), 4) if vals else None
 
-    summary = {k: mean(k) for k in ["recall@1", "recall@5", "recall@10", "mrr@10", "ndcg@10", "token_f1",
+    summary = {k: mean(k) for k in ["recall@1", "recall@5", "recall@10", "mrr@10", "ndcg@10", "dup_rate@5", "token_f1",
                                     "numeric_exact", "citation_precision", "unsupported_rate", "abstention_correct"]}
     lat = [r["total_ms"] for r in rows if "total_ms" in r] or [r["retrieve_ms"] for r in rows]
     summary.update({"p50_ms": round(percentile(lat, 50)), "p95_ms": round(percentile(lat, 95)), "n": len(rows)})

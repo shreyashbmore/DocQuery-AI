@@ -1,0 +1,39 @@
+index_dir: /Users/shreyashmore/Practice/Learning concepts/Document interaction/DocQuery-AI/index/default
+chunking:
+  strategy: recursive
+  chunk_size: 220
+  overlap: 40
+  overlap_mode: sentence
+  semantic_threshold: 0.25
+embedding:
+  provider: sentence-transformers
+  model: BAAI/bge-small-en-v1.5
+  batch_size: 32
+store:
+  backend: memory
+  qdrant_url: null
+retrieval:
+  mode: hybrid
+  candidates: 20
+  rrf_k: 60
+  top_k: 5
+  dedup_threshold: 0.8
+reranker:
+  enabled: true
+  model: BAAI/bge-reranker-base
+gate:
+  enabled: true
+  min_rerank_score: 0.15
+  min_dense_score: 0.45
+llm:
+  provider: ollama
+  model: llama3.1:8b
+  temperature: 0.1
+  max_tokens: 700
+  timeout: 120
+support_check:
+  enabled: true
+  min_similarity: 0.5
+chat:
+  rewrite_queries: true
+  max_history_turns: 4

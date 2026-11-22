@@ -5,7 +5,8 @@ index_dir: index/default
 chunking:
   strategy: recursive      # fixed | recursive | semantic
   chunk_size: 220          # words (~300 tokens)
-  overlap: 40              # words (fixed / recursive)
+  overlap: 40              # words, or a fraction of chunk_size (0.2 = 20%); common practice is 10-20%
+  overlap_mode: sentence   # sentence (whole sentences only) | word (raw word window) - recursive strategy
   semantic_threshold: 0.25 # percentile of adjacent-sentence similarity used as a breakpoint
 
 embedding:
@@ -22,6 +23,7 @@ retrieval:
   candidates: 20           # per retriever before fusion
   rrf_k: 60
   top_k: 5                 # chunks passed to the LLM
+  dedup_threshold: 0.8     # drop a chunk if >= 80% of its terms appear in a higher-ranked one; null = off
 
 reranker:
   enabled: true

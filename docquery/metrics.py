@@ -69,3 +69,23 @@ def is_relevant(chunk, item: dict) -> bool:
     if pages:
         return chunk.page in pages
     return bool(item.get("source")) and not evidence
+
+
+def _terms(text: str) -> set[str]:
+    return set(re.findall(r"[a-z0-9]+", text.lower()))
+
+
+def containment(a: str, b: str) -> float:
+    """Share of the smaller text's terms that also appear in the other (1.0 = one contains the other)."""
+    ta, tb = _terms(a), _terms(b)
+    if not ta or not tb:
+        return 0.0
+    return len(ta & tb) / min(len(ta), len(tb))
+
+
+def duplicate_rate(texts: list[str], threshold: float = 0.8) -> float:
+    """Fraction of results that are near-duplicates of a higher-ranked result."""
+    if len(texts) < 2:
+        return 0.0
+    dups = sum(any(containment(texts[i], texts[j]) >= threshold for j in range(i)) for i in range(1, len(texts)))
+    return dups / len(texts)

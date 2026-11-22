@@ -56,7 +56,38 @@ def _recursive_split(text: str, size: int, seps: list[str]) -> list[str]:
     return out
 
 
-def recursive_chunks(text: str, size: int, overlap: int) -> list[str]:
+def resolve_overlap(overlap: float, size: int) -> int:
+    """Overlap may be given in words (e.g. 40) or as a fraction of chunk size (e.g. 0.2 = 20%)."""
+    overlap = float(overlap or 0)
+    return int(round(overlap * size)) if 0 < overlap < 1 else int(overlap)
+
+
+def overlap_tail(chunk_text: str, overlap: int, mode: str = "sentence") -> str:
+    """Text carried from the end of one chunk into the start of the next.
+
+    * ``word``: the last ``overlap`` words (can cut a sentence in half).
+    * ``sentence``: whole trailing sentences within the ``overlap`` word budget, so a rule that
+      straddles a boundary appears complete in at least one chunk. A single final sentence up to
+      2x the budget is still carried; longer ones are not, to avoid near-duplicate chunks.
+    """
+    if overlap <= 0:
+        return ""
+    if mode == "word":
+        return " ".join(_words(chunk_text)[-overlap:])
+    sents = split_sentences(chunk_text)
+    picked, total = [], 0
+    for sent in reversed(sents):
+        n = len(_words(sent))
+        if total + n > overlap and not (not picked and n <= 2 * overlap):
+            break
+        picked.insert(0, sent)
+        total += n
+        if total >= overlap:
+            break
+    return " ".join(picked)
+
+
+def recursive_chunks(text: str, size: int, overlap: int, overlap_mode: str = "sentence") -> list[str]:
     """Split on paragraphs, then lines, then sentences; merge neighbours up to ``size`` words.
 
     Paragraph breaks are kept so later stages (sentence splitting, citations) see real structure.
@@ -67,8 +98,8 @@ def recursive_chunks(text: str, size: int, overlap: int) -> list[str]:
         n = len(_words(piece))
         if cur and cur_len + n > size:
             chunks.append("\n\n".join(cur))
-            tail = _words(cur[-1])[-overlap:] if overlap else []
-            cur, cur_len = ([" ".join(tail)], len(tail)) if tail else ([], 0)
+            tail = overlap_tail(chunks[-1], overlap, overlap_mode)
+            cur, cur_len = ([tail], len(_words(tail))) if tail else ([], 0)
         cur.append(piece)
         cur_len += n
     if cur:
@@ -102,13 +133,15 @@ def semantic_chunks(text: str, size: int, embed: Callable[[list[str]], np.ndarra
 # ---------------------------------------------------------------- entry point
 def chunk_sections(sections: list[Section], cfg: dict, embed=None) -> list[Chunk]:
     strategy = cfg.get("strategy", "recursive")
-    size, overlap = int(cfg.get("chunk_size", 220)), int(cfg.get("overlap", 40))
+    size = int(cfg.get("chunk_size", 220))
+    overlap = resolve_overlap(cfg.get("overlap", 40), size)
+    overlap_mode = cfg.get("overlap_mode", "sentence")
     out: list[Chunk] = []
     for sec in sections:
         if strategy == "fixed":
             texts = fixed_chunks(sec.text, size, overlap)
         elif strategy == "recursive":
-            texts = recursive_chunks(sec.text, size, overlap)
+            texts = recursive_chunks(sec.text, size, overlap, overlap_mode)
         elif strategy == "semantic":
             if embed is None:
                 raise ValueError("semantic chunking needs an embedding function")
@@ -119,5 +152,6 @@ def chunk_sections(sections: list[Section], cfg: dict, embed=None) -> list[Chunk
             if len(t.split()) < 5:
                 continue
             cid = f"{sec.doc_id}-p{sec.page or 0}-c{i}"
-            out.append(Chunk(cid, sec.doc_id, sec.source, t, sec.page, {"strategy": strategy}))
+            out.append(Chunk(cid, sec.doc_id, sec.source, t, sec.page,
+                             {"strategy": strategy, "overlap": overlap, "overlap_mode": overlap_mode}))
     return out

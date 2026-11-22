@@ -60,6 +60,8 @@ python -m docquery.cli -o llm.model=qwen2.5:7b -o store.backend=qdrant ingest da
 | Key | Options |
 | --- | --- |
 | `chunking.strategy` | `fixed`, `recursive`, `semantic` |
+| `chunking.overlap` / `overlap_mode` | words or a fraction (`0.2`) / `sentence`, `word` |
+| `retrieval.dedup_threshold` | `0.8` (default), `null` to turn off |
 | `embedding.provider` | `sentence-transformers`, `openai`, `hash` |
 | `store.backend` | `memory`, `qdrant` (embedded, or `store.qdrant_url` for a server; see `docker-compose.yml`) |
 | `retrieval.mode` | `dense`, `bm25`, `hybrid` |
@@ -69,6 +71,10 @@ python -m docquery.cli -o llm.model=qwen2.5:7b -o store.backend=qdrant ingest da
 Changing the embedder or the store needs a fresh `index_dir` (or delete the old index).
 
 ## Evaluation
+
+**One command for everything:** `python eval/run_experiments.py --docs data/docs --gold eval/gold_qa.jsonl --llm qwen2.5:7b` runs all three studies and writes `docs/EXPERIMENTS.md`. See [docs/RUNNING_EXPERIMENTS.md](docs/RUNNING_EXPERIMENTS.md) for the full guide, including how to draft and review the gold question set with `eval/draft_gold.py` and `eval/review_gold.py`.
+
+Individual tools:
 
 1. Write `eval/gold_qa.jsonl`, one question per line. See `eval/gold_qa.sample.jsonl` for the format, including unanswerable questions (`"answerable": false`).
 2. Run:
@@ -82,6 +88,17 @@ python eval/run_ablation.py --docs data/docs --gold eval/gold_qa.jsonl --with-ll
 ```
 
 The ablation prints a Markdown table you can paste straight into the report. Results are saved in `eval/results/`.
+
+**Chunk-overlap study.** Overlap stops a rule that crosses a chunk boundary from being split in two. Too much overlap, though, creates near-duplicate chunks that crowd the top-k. Common practice is 10–20% of the chunk size. To measure it on your own documents:
+
+```bash
+python eval/run_ablation.py --docs data/docs --gold eval/gold_qa.jsonl --chunking recursive \
+    --overlaps 0 0.1 0.2 0.3 --overlap-modes word sentence --dedup off on --retrieval hybrid+rerank
+```
+
+- `--overlap-modes`: `word` carries a raw word window into the next chunk. `sentence` carries only whole sentences.
+- `--dedup`: turns removal of near-duplicate results on or off (`retrieval.dedup_threshold`).
+- `dup_rate@5`: the share of the top 5 results that repeat a higher-ranked one.
 
 ## Tests
 
